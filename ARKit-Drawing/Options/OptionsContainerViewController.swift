@@ -3,7 +3,6 @@ import SceneKit
 
 protocol OptionsViewControllerDelegate: class {
     func objectSelected(node: SCNNode)
-    func undoLastObject()
     func togglePlaneVisualization()
     func resetScene()
 }
@@ -35,7 +34,6 @@ class OptionsContainerViewController: UIViewController, UINavigationControllerDe
             Option(option: ShapeOption.addShape),
             Option(option: ShapeOption.addScene),
             Option(option: ShapeOption.togglePlane, showsDisclosureIndicator: false),
-            Option(option: ShapeOption.undoLastShape, showsDisclosureIndicator: false),
             Option(option: ShapeOption.resetScene, showsDisclosureIndicator: false)
         ]
         
@@ -49,8 +47,6 @@ class OptionsContainerViewController: UIViewController, UINavigationControllerDe
                 self.nav?.pushViewController(self.scenePicker(), animated: true)
             case .togglePlane:
                 self.delegate?.togglePlaneVisualization()
-            case .undoLastShape:
-                self.delegate?.undoLastObject()
             case .resetScene:
                 self.delegate?.resetScene()
             }
