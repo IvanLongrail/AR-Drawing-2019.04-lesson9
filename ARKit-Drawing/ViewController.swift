@@ -73,6 +73,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
+    @IBAction func undoButton(_ sendet: UIButton) {
+        undoLastObject()
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "showOptions" {
             let optionsViewController = segue.destination as! OptionsContainerViewController
