@@ -3,20 +3,23 @@ import ARKit
 class ViewController: UIViewController, ARSCNViewDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
+    @IBOutlet var counterLabel: UILabel!
     
     let configuration = ARWorldTrackingConfiguration()
     
-    /// Mimimim distance between nearby points (in 2D coordinates)
-    let touchDistanceThreshold = CGFloat(200)
     
     /// Coordinates of last placed point
-    var lastObjectPlacedPoint: SCNVector3?//CGPoint?
+    var lastObjectPlacedPoint: SCNVector3?
     
     /// Node selected by user
     var selectedNode: SCNNode?
     
     /// Nodes placed by the user
-    var placedNodes = [SCNNode]()
+    var placedNodes = [SCNNode]() {
+        didSet {
+            counterLabel.text = String(placedNodes.count)
+        }
+    }
     
     /// Visualization planes placed when detecting planes
     var planeNodes = [SCNNode]()
@@ -214,10 +217,7 @@ extension ViewController {
     ///   - node: selected node to add
     ///   - point: point at the screen to use
     func addNode(_ node: SCNNode, to point: CGPoint) {
-//        let results = sceneView.hitTest(point, types: [.existingPlaneUsingExtent])
-//
-//        guard let match = results.first else { return }
-//
+        
         guard let transform = getSimdTransform(from: point) else { return }
     
         node.position = getPointPosition(from: transform)
@@ -231,12 +231,6 @@ extension ViewController {
     ///
     /// - Parameter node: SCNNode to place in scene
     func addNodeInFront(_ node: SCNNode) {
-//        guard let currentFrame = sceneView.session.currentFrame else { return }
-//
-//        var translation = matrix_identity_float4x4
-//        translation.columns.3.z = -0.2
-//        node.simdTransform = matrix_multiply(currentFrame.camera.transform, translation)
-        
         guard let transform = getSimdTransform() else { return }
         
         node.simdTransform = transform
@@ -361,7 +355,7 @@ extension ViewController {
 // MARK: - Configuration Methods
 extension ViewController {
     func reloadConfiguration(removeAnchors: Bool = true) {
-        configuration.planeDetection = .horizontal
+        configuration.planeDetection = [.horizontal, .vertical]
         
         let images = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil)
         
