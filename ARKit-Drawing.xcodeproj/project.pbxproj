@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5519DC5720238B6000B1008D /* OptionSelectorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5519DC5620238B6000B1008D /* OptionSelectorViewController.swift */; };
+		B61289D22284A42900AB6BB4 /* FocusSquare.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61289D12284A42900AB6BB4 /* FocusSquare.swift */; };
+		B61289D42284A43100AB6BB4 /* FocusSquareSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61289D32284A43100AB6BB4 /* FocusSquareSegment.swift */; };
 		BE618F32203E31B8005EC6F1 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE618F31203E31B8005EC6F1 /* UIViewController+Extensions.swift */; };
 		BE915EAB20105C1D00A251FD /* OptionsContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE915EAA20105C1D00A251FD /* OptionsContainerViewController.swift */; };
 		BEDB2EDA200EABAD001C6BBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEDB2ED9200EABAD001C6BBC /* AppDelegate.swift */; };
@@ -23,6 +25,8 @@
 /* Begin PBXFileReference section */
 		5519DC5620238B6000B1008D /* OptionSelectorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionSelectorViewController.swift; sourceTree = "<group>"; };
 		698174FF225282E2001A56C2 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		B61289D12284A42900AB6BB4 /* FocusSquare.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FocusSquare.swift; sourceTree = "<group>"; };
+		B61289D32284A43100AB6BB4 /* FocusSquareSegment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FocusSquareSegment.swift; sourceTree = "<group>"; };
 		BE618F31203E31B8005EC6F1 /* UIViewController+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Extensions.swift"; sourceTree = "<group>"; };
 		BE915EAA20105C1D00A251FD /* OptionsContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionsContainerViewController.swift; sourceTree = "<group>"; };
 		BEDB2ED6200EABAD001C6BBC /* ARKit-Drawing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ARKit-Drawing.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,6 +60,15 @@
 			path = LICENSE;
 			sourceTree = "<group>";
 		};
+		B61289CC2284A40A00AB6BB4 /* Focus Square */ = {
+			isa = PBXGroup;
+			children = (
+				B61289D12284A42900AB6BB4 /* FocusSquare.swift */,
+				B61289D32284A43100AB6BB4 /* FocusSquareSegment.swift */,
+			);
+			path = "Focus Square";
+			sourceTree = "<group>";
+		};
 		BEDB2ECD200EABAD001C6BBC = {
 			isa = PBXGroup;
 			children = (
@@ -79,6 +92,7 @@
 				BEDB2EDD200EABAD001C6BBC /* ViewController.swift */,
 				BEDB2EEF200ECC4C001C6BBC /* BasicShape.swift */,
 				BEDB2EDF200EABAD001C6BBC /* Main.storyboard */,
+				B61289CC2284A40A00AB6BB4 /* Focus Square */,
 				BEDB2EF1200ECF14001C6BBC /* Options */,
 				698174FE225282E2001A56C2 /* LICENSE */,
 				BEDB2EDB200EABAD001C6BBC /* models.scnassets */,
@@ -176,11 +190,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				BEDB2EDE200EABAD001C6BBC /* ViewController.swift in Sources */,
+				B61289D22284A42900AB6BB4 /* FocusSquare.swift in Sources */,
 				BE915EAB20105C1D00A251FD /* OptionsContainerViewController.swift in Sources */,
 				BEDB2EDA200EABAD001C6BBC /* AppDelegate.swift in Sources */,
 				5519DC5720238B6000B1008D /* OptionSelectorViewController.swift in Sources */,
 				BE618F32203E31B8005EC6F1 /* UIViewController+Extensions.swift in Sources */,
 				BEDB2EF0200ECC4C001C6BBC /* BasicShape.swift in Sources */,
+				B61289D42284A43100AB6BB4 /* FocusSquareSegment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

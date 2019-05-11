@@ -75,6 +75,9 @@ class OptionsContainerViewController: UIViewController, UINavigationControllerDe
         selector.optionSelectionCallback = { [unowned self] name in
             let nameWithoutExtension = name.replacingOccurrences(of: ".scn", with: "")
             let scene = SCNScene(named: "\(resourceFolder)/\(nameWithoutExtension)/\(name)")!
+            
+            
+            
             self.delegate?.objectSelected(node: scene.rootNode)
         }
         return selector
@@ -111,6 +114,7 @@ class OptionsContainerViewController: UIViewController, UINavigationControllerDe
         let selector = OptionSelectorViewController(options: options)
         selector.optionSelectionCallback = { [unowned self] option in
             let node = self.createNode(shape: self.shape, color: self.color, size: option)
+
             self.delegate?.objectSelected(node: node)
         }
         return selector

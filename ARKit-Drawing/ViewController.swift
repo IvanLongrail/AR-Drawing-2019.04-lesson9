@@ -1,12 +1,14 @@
 import ARKit
+import SceneKit
+import UIKit
+import Foundation
 
 class ViewController: UIViewController, ARSCNViewDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
     @IBOutlet var counterLabel: UILabel!
-    
+
     let configuration = ARWorldTrackingConfiguration()
-    
     
     /// Coordinates of last placed point
     var lastObjectPlacedPoint: SCNVector3?
@@ -15,14 +17,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     var selectedNode: SCNNode?
     
     /// Nodes placed by the user
-    var placedNodes = [SCNNode]() {
-        didSet {
-            counterLabel.text = String(placedNodes.count)
-        }
-    }
+    var placedNodes:[SCNNode?] = [SCNNode]()
     
     /// Visualization planes placed when detecting planes
     var planeNodes = [SCNNode]()
+    
+    var focusSquare = FocusSquare()
+    var screenCenter: CGPoint {
+        let bounds = sceneView.bounds
+        return CGPoint(x: bounds.midX, y: bounds.midY)
+    }
     
     /// Defines whether plane visualisation is shown
     var showPlaneOverlay = false {
@@ -48,6 +52,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         sceneView.delegate = self
         sceneView.autoenablesDefaultLighting = true
+        sceneView.scene.physicsWorld.contactDelegate = self
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -104,13 +109,15 @@ extension ViewController: OptionsViewControllerDelegate {
     }
     
     func undoLastObject() {
-        guard let lastNode = placedNodes.last else {
+
+        let lastNodeOptional = placedNodes.compactMap{$0}.last
+        guard let lastNode = lastNodeOptional else {
             dismiss(animated: true, completion: nil)
             return
         }
         
+        placedNodes.remove(at: Int(lastNode.name!)!)
         lastNode.removeFromParentNode()
-        placedNodes.removeLast()
     }
     
     func resetScene() {
@@ -140,41 +147,11 @@ extension ViewController {
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
-        
+            
         guard let selectedNode = selectedNode else { return }
         guard let touch = touches.first else { return }
-        guard let lastTouchPoint = lastObjectPlacedPoint else { return }
-        
-        let currentTouchPoint = touch.location(in: sceneView)
-        var newTouchPoint = SCNVector3()
-        
-        switch objectMode {
-        case .freeform:
-            guard let newTouchPointTransform = getSimdTransform() else { return }
-            
-            newTouchPoint = getPointPosition(from: newTouchPointTransform)
-            
-        case .image:
-            break
-            
-        case .plane:
-            guard let newTouchPointTransform = getSimdTransform(from: currentTouchPoint) else { return }
-            
-            newTouchPoint = getPointPosition(from: newTouchPointTransform)
-        }
 
-        
-        let deltaX = newTouchPoint.x - lastTouchPoint.x
-        let deltaY = newTouchPoint.y - lastTouchPoint.y
-        let deltaZ = newTouchPoint.z - lastTouchPoint.z
-        
-        let distanceSquare = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ
-        
-        let radiusBoundingSphere = selectedNode.boundingSphere.radius
-        let radiusSquare = radiusBoundingSphere * radiusBoundingSphere
-        guard 4 * radiusSquare < distanceSquare else {
-            return
-        }
+        let currentTouchPoint = touch.location(in: sceneView)
         
         switch objectMode {
         case .freeform:
@@ -188,7 +165,6 @@ extension ViewController {
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
-        
         lastObjectPlacedPoint = nil
     }
 }
@@ -202,7 +178,34 @@ extension ViewController {
     ///   - parentNode: parent node to which the node to be added
     func addNode(_ node: SCNNode, to parentNode: SCNNode, isFloor: Bool = false) {
         let cloneNode = isFloor ? node : node.clone()
+        
+        if !isFloor {
+ 
+            var physicsShape = SCNPhysicsShape()
+            if let geometry = cloneNode.geometry {
+                physicsShape = SCNPhysicsShape(geometry: geometry, options: nil)
+            } else {
+                let minX = cloneNode.boundingBox.min.x
+                let minY = cloneNode.boundingBox.min.y
+                let minZ = cloneNode.boundingBox.min.z
+                let maxX = cloneNode.boundingBox.max.x
+                let maxY = cloneNode.boundingBox.max.y
+                let maxZ = cloneNode.boundingBox.max.z
+                let geometry = SCNBox(width: CGFloat(maxX - minX), height: CGFloat(maxY - minY), length: CGFloat(maxZ - minZ), chamferRadius: 0)
+                physicsShape = SCNPhysicsShape(geometry: geometry, options: nil)
+            }
+            
+            cloneNode.physicsBody = SCNPhysicsBody(type: .dynamic, shape: physicsShape)
+            cloneNode.physicsBody!.isAffectedByGravity = false
+            cloneNode.physicsBody!.categoryBitMask = 1 << 0
+            cloneNode.physicsBody!.collisionBitMask = 0 << 0
+            cloneNode.physicsBody!.contactTestBitMask = 1 << 0
+            
+            cloneNode.name = String(placedNodes.count)
+        }
+        
         parentNode.addChildNode(cloneNode)
+        
         
         if isFloor {
             planeNodes.append(cloneNode)
@@ -234,6 +237,7 @@ extension ViewController {
         guard let transform = getSimdTransform() else { return }
         
         node.simdTransform = transform
+        node.eulerAngles.z = -.pi * 2
         
         addNodeToSceneRoot(node)
         
@@ -293,12 +297,12 @@ extension ViewController {
     func createFloor(planeAnchor: ARPlaneAnchor) -> SCNNode {
         let extent = planeAnchor.extent
         let geometry = SCNPlane(width: CGFloat(extent.x), height: CGFloat(extent.z))
-        geometry.firstMaterial?.diffuse.contents = UIColor.blue
+        //geometry.firstMaterial?.diffuse.contents = UIColor.blue
         
         let node = SCNNode(geometry: geometry)
         
         node.eulerAngles.x = -.pi / 2
-        node.opacity = 0.25
+        node.opacity = 0
         
         return node
     }
@@ -329,7 +333,6 @@ extension ViewController {
 // MARK: - ARSCNViewDelegate
 extension ViewController {
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        print(#function, #line)
         
         if let planeAnchor = anchor as? ARPlaneAnchor {
             nodeAdded(node, for: planeAnchor)
@@ -349,6 +352,12 @@ extension ViewController {
         let extent = planeAnchor.extent
         plane.width = CGFloat(extent.x)
         plane.height = CGFloat(extent.z)
+
+        self.counterLabel.text = String(self.placedNodes.compactMap {$0}.count)
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        updateFocusSquare()
     }
 }
 
@@ -365,15 +374,131 @@ extension ViewController {
         
         if removeAnchors {
             options = [.removeExistingAnchors]
-
+            
             planeNodes.removeAll()
             
-            placedNodes.forEach { $0.removeFromParentNode() }
+            placedNodes.forEach { $0?.removeFromParentNode() }
             placedNodes.removeAll()
+            
         } else {
             options = []
         }
         
         sceneView.session.run(configuration, options: options)
+    }
+}
+
+// MARK: - Physics Contact Methods
+extension ViewController: SCNPhysicsContactDelegate {
+
+    func physicsWorld(_ world: SCNPhysicsWorld, didBegin contact: SCNPhysicsContact) {
+    
+        let nodeA = contact.nodeA
+        let nodeB = contact.nodeB
+        let numberA = Int(nodeA.name!)!
+        let numberB = Int(nodeB.name!)!
+        
+        if numberA > numberB {
+            nodeA.removeFromParentNode()
+            placedNodes[numberA] = nil
+        } else {
+            nodeB.removeFromParentNode()
+            placedNodes[numberB] = nil
+        }
+    }
+}
+
+// MARK: - Focus Square
+extension ViewController {
+    
+    func updateFocusSquare() {
+        
+        switch objectMode {
+        case .plane:
+            focusSquare.unhide()
+            // Perform hit testing only when ARKit tracking is in a good state.
+            if let camera = sceneView.session.currentFrame?.camera, case .normal = camera.trackingState,
+                let result = self.sceneView.smartHitTest(screenCenter) {
+                
+                self.sceneView.scene.rootNode.addChildNode(self.focusSquare)
+                self.focusSquare.state = .detecting(hitTestResult: result, camera: camera)
+                
+            } else {
+                self.focusSquare.state = .initializing
+                self.sceneView.pointOfView?.addChildNode(self.focusSquare)
+            }
+        default:
+            focusSquare.hide()
+        }
+    }
+}
+
+extension ARSCNView {
+    func smartHitTest(_ point: CGPoint,
+                      allowedAlignments: [ARPlaneAnchor.Alignment] = [.horizontal, .vertical]) -> ARHitTestResult? {
+        
+        // Perform the hit test.
+        let results = hitTest(point, types: [.existingPlaneUsingGeometry, .estimatedVerticalPlane, .estimatedHorizontalPlane])
+        
+        // 1. Check for a result on an existing plane using geometry.
+        if let existingPlaneUsingGeometryResult = results.first(where: { $0.type == .existingPlaneUsingGeometry }),
+            let planeAnchor = existingPlaneUsingGeometryResult.anchor as? ARPlaneAnchor, allowedAlignments.contains(planeAnchor.alignment) {
+            return existingPlaneUsingGeometryResult
+        }
+
+        // 2. As a final fallback, check for a result on estimated planes.
+        let vResult = results.first(where: { $0.type == .estimatedVerticalPlane })
+        let hResult = results.first(where: { $0.type == .estimatedHorizontalPlane })
+        switch (allowedAlignments.contains(.horizontal), allowedAlignments.contains(.vertical)) {
+        case (true, false):
+            return hResult
+        case (false, true):
+            // Allow fallback to horizontal because we assume that objects meant for vertical placement
+            // (like a picture) can always be placed on a horizontal surface, too.
+            return vResult ?? hResult
+        case (true, true):
+            if hResult != nil && vResult != nil {
+                return hResult!.distance < vResult!.distance ? hResult! : vResult!
+            } else {
+                return hResult ?? vResult
+            }
+        default:
+            return nil
+        }
+    }
+}
+
+// MARK: - float4x4 extensions
+
+extension float4x4 {
+    /**
+     Treats matrix as a (right-hand column-major convention) transform matrix
+     and factors out the translation component of the transform.
+     */
+    var translation: float3 {
+        get {
+            let translation = columns.3
+            return float3(translation.x, translation.y, translation.z)
+        }
+        set(newValue) {
+            columns.3 = float4(newValue.x, newValue.y, newValue.z, columns.3.w)
+        }
+    }
+    
+    /**
+     Factors out the orientation component of the transform.
+     */
+    var orientation: simd_quatf {
+        return simd_quaternion(self)
+    }
+    
+    /**
+     Creates a transform matrix with a uniform scale factor in all directions.
+     */
+    init(uniformScale scale: Float) {
+        self = matrix_identity_float4x4
+        columns.0.x = scale
+        columns.1.y = scale
+        columns.2.z = scale
     }
 }
